@@ -32,3 +32,7 @@ clean:
 
 deps:
 	go get github.com/constabulary/gb/...
+#  -- It's desirable to use 'gb' over 'go build' in the future, but currently
+#      it does not support compiling static binaries. The directory structure
+#      is already laid out for it though, so it should be an easy switch once
+#      it does, and you can already use it if you desire.
