@@ -1,0 +1,40 @@
+{
+	"volumes": [{
+		"name": "nginxdata",
+		"host": {}
+	}],
+	"family": "example-kite-collect-instanceids",
+	"containerDefinitions": [{
+		"image": "nginx:latest",
+		"name": "nginx",
+		"memory": 20,
+		"portMappings": [{
+			"containerPort": 80,
+			"hostPort": 80
+		}],
+		"mountPoints": [{
+			"sourceVolume": "nginxdata",
+			"containerPath": "/usr/share/nginx/html/",
+			"readOnly": true
+		}]
+	}, {
+		"name": "instance-id-getter",
+		"image": "busybox:latest",
+		"links": ["ambassador:instance"],
+		"memory": 10,
+		"mountPoints": [{
+			"sourceVolume": "nginxdata",
+			"containerPath": "/nginx"
+		}],
+		"command": ["sh", "-c", "i=0; while true; do echo \"$i: $(date) $(wget -q -O- http://instance/index.txt)<br>\" >> /tmp/ids.htm; echo \"<!DOCTYPE html><html><body><p>Below are observed instance ids and the time they were observed; refresh the page to see the current list. <br><br> $(cat /tmp/ids.htm | sort -nr)</body></html>\" > /nginx/index.html; sleep 3; i=$((i+1)); done"]
+	}, {
+		"name": "ambassador",
+		"image": "amazon/ecs-task-kite:latest",
+		"memory": 15,
+		"environment": [{
+			"name": "AWS_REGION",
+			"value": "us-west-2"
+		}],
+		"command": ["-family=example-kite-serve-instanceid", "-name=nginx"]
+	}]
+}

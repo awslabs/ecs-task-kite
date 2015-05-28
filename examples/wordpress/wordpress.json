@@ -1,0 +1,30 @@
+{
+	"family": "example-kite-wordpress",
+	"containerDefinitions": [{
+		"name": "wordpress",
+		"image": "wordpress:latest",
+		"links": ["ambassador:mysql"],
+		"memory": 500,
+		"environment": [{
+			"name": "WORDPRESS_DB_HOST",
+			"value": "mysql"
+		}, {
+			"name": "WORDPRESS_DB_PASSWORD",
+			"value": "password"
+		}],
+		"portMappings": [{
+			"containerPort": 80,
+			"hostPort": 80
+		}]
+	}, {
+		"name": "ambassador",
+		"image": "amazon/ecs-task-kite:latest",
+		"memory": 15,
+		"environment": [{
+			"name": "AWS_REGION",
+			"value": "us-west-2"
+		}],
+		"command": ["-family=example-kite-serve-instanceid", "-name=nginx"]
+	}]
+}
+
