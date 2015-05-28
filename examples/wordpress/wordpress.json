@@ -20,10 +20,6 @@
 		"name": "ambassador",
 		"image": "amazon/ecs-task-kite:latest",
 		"memory": 15,
-		"environment": [{
-			"name": "AWS_REGION",
-			"value": "us-west-2"
-		}],
 		"command": ["-family=example-kite-serve-instanceid", "-name=nginx"]
 	}]
 }

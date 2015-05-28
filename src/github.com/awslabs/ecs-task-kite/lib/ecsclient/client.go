@@ -16,8 +16,10 @@
 package ecsclient
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -30,8 +32,10 @@ import (
 	"github.com/awslabs/aws-sdk-go/service/ecs/ecsiface"
 )
 
-// EcsChunkSize is the maximum number of elements to pass into a describe api
-const EcsChunkSize = 100
+// ecsChunkSize is the maximum number of elements to pass into a describe api
+const ecsChunkSize = 100
+
+const instanceIdentityDocumentResource = "http://169.254.169.254/2014-11-05/dynamic/instance-identity/document"
 
 // Task wraps the ECS task and augments it with helper functions and a reference to its EC2 instance.
 // It should not be instantiated directly, but rather recieved from various functions in this package.
@@ -103,20 +107,40 @@ type ECSClient struct {
 }
 
 func New(cluster string, region string) ECSSimpleClient {
+	httpClient := &http.Client{
+		Timeout:   3 * time.Second,
+		Transport: &userAgentedRoundTripper{},
+	}
+
 	if region == "" {
 		region = os.Getenv("AWS_REGION")
 	}
 	if region == "" {
 		region = os.Getenv("AWS_DEFAULT_REGION")
 	}
+
+	if region == "" {
+		log.Debug("Trying to get region from instance identity doc")
+		iidResp, err := httpClient.Get(instanceIdentityDocumentResource)
+		if err != nil {
+			log.Debug("Error getting iid resource ", err)
+		} else {
+			iidBody, _ := ioutil.ReadAll(iidResp.Body)
+			iid := struct {
+				Region string `json:"region"`
+			}{}
+			err = json.Unmarshal(iidBody, &iid)
+			if err != nil {
+				log.Debug("Couldn't unmarshal IID: ", err)
+			}
+			region = iid.Region
+		}
+	}
 	if region == "" {
 		panic("Set a region (hint, use the environment variable AWS_REGION)")
 	}
+	log.Info("Region: " + region)
 
-	httpClient := &http.Client{
-		Timeout:   3 * time.Second,
-		Transport: &userAgentedRoundTripper{},
-	}
 	cfg := (*aws.DefaultConfig).Merge(&aws.Config{Region: region, HTTPClient: httpClient})
 
 	ecsSdkClient := ecs.New(cfg)
