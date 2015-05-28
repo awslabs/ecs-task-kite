@@ -39,7 +39,7 @@ Required:
  * Environment variable: `AWS_REGION=<AWS Region>` set to the region of the task(s) you will be ambassadoring.
 
 Optional:
- * Flag: `-public=<true\|false>`: Whether to proxy to the public IP of the EC2 instance(s); default false.
+ * Flag: `-public=<true|false>`: Whether to proxy to the public IP of the EC2 instance(s); default false.
  * Flag: `-cluster=<cluster>`: The ECS cluster containing the above tasks or service; default "default".
 
 The Task Kite will proxy to a task of the specified family or within the
