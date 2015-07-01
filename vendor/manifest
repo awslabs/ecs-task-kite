@@ -1,0 +1,42 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/aws/aws-sdk-go",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"revision": "b8f755638cde80147b5c9e3e4e732d27cf6584ed",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/lsegal/gucumber",
+			"repository": "https://github.com/lsegal/gucumber",
+			"revision": "e8116c9c66e641e9f81fc0a79fac923dfc646378",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/shiena/ansicolor",
+			"repository": "https://github.com/shiena/ansicolor",
+			"revision": "264b0566801533988151a23fc5f75d66d831d6ae",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/stretchr/testify/assert",
+			"repository": "https://github.com/stretchr/testify",
+			"revision": "089c7181b8c728499929ff09b62d3fdd8df8adff",
+			"branch": "master",
+			"path": "/assert"
+		},
+		{
+			"importpath": "github.com/vaughan0/go-ini",
+			"repository": "https://github.com/vaughan0/go-ini",
+			"revision": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/golang/mock",
+			"repository": "https://github.com/golang/mock",
+			"revision": "15f8b22550555c0d3edf5afa97d74001bda2208b",
+			"branch": "master"
+		}
+	]
+}
