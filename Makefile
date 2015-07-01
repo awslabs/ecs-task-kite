@@ -27,11 +27,15 @@ static-go-binary:
 vendor:
 	cd vendor && bash vendor.sh
 
+generate:
+	go generate ./src/...
+
 clean:
 	rm -rf ./bin ./pkg ./vendor/pkg
 
 deps:
-	go get github.com/constabulary/gb/...
+	@echo "Nothing here yet"
+#  go get github.com/constabulary/gb/...
 #  -- It's desirable to use 'gb' over 'go build' in the future, but currently
 #      it does not support compiling static binaries. The directory structure
 #      is already laid out for it though, so it should be an easy switch once

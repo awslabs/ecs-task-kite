@@ -25,11 +25,11 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/awslabs/aws-sdk-go/aws"
-	"github.com/awslabs/aws-sdk-go/service/ec2"
-	"github.com/awslabs/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/awslabs/aws-sdk-go/service/ecs"
-	"github.com/awslabs/aws-sdk-go/service/ecs/ecsiface"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/aws/aws-sdk-go/service/ecs/ecsiface"
 )
 
 // ecsChunkSize is the maximum number of elements to pass into a describe api

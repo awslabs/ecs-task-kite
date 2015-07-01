@@ -37,6 +37,42 @@
 			"repository": "https://github.com/golang/mock",
 			"revision": "15f8b22550555c0d3edf5afa97d74001bda2208b",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/Sirupsen/logrus",
+			"repository": "https://github.com/Sirupsen/logrus",
+			"revision": "ab7e46ea22bd379e660230844f96d20f1dabc21a",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/bugsnag/bugsnag-go",
+			"repository": "https://github.com/bugsnag/bugsnag-go",
+			"revision": "13fd6b8acda029830ef9904df6b63be0a83369d0",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/bugsnag/panicwrap",
+			"repository": "https://github.com/bugsnag/panicwrap",
+			"revision": "e5f9854865b9778a45169fc249e99e338d4d6f27",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/bugsnag/osext",
+			"repository": "https://github.com/bugsnag/osext",
+			"revision": "0dd3f918b21bec95ace9dc86c7e70266cfc5c702",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/getsentry/raven-go",
+			"repository": "https://github.com/getsentry/raven-go",
+			"revision": "b4cfeb65c7ac54358cf22498a85588836c50e159",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/tobi/airbrake-go",
+			"repository": "https://github.com/tobi/airbrake-go",
+			"revision": "5b5e269e1bc398d43f67e43dafff3414a59cd5a2",
+			"branch": "master"
 		}
 	]
 }
