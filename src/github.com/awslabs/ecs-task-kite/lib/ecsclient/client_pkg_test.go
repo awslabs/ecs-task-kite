@@ -17,7 +17,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/awslabs/aws-sdk-go/service/ecs"
+	"github.com/aws/aws-sdk-go/service/ecs"
 )
 
 func TestRegionDefaults(t *testing.T) {
