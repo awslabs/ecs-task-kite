@@ -31,7 +31,8 @@ generate:
 	go generate ./src/...
 
 clean:
-	rm -rf ./bin ./pkg ./vendor/pkg
+	rm -rf ./bin ./pkg ./vendor/pkg ./misc/ca-bundle.crt
+	-rmdir ./misc/
 
 deps:
 	@echo "Nothing here yet"
