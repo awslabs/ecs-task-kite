@@ -12,7 +12,7 @@
 # language governing permissions and limitations under the License.
 
 FROM scratch
-MAINTAINER Euan Kemp <euank@amazon.com>
+MAINTAINER Amazon Web Services
 COPY ./bin/ecs-task-kite /ecs-task-kite
 COPY ./misc/ca-bundle.crt /etc/ssl/certs/ca-certificates.crt
 

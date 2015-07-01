@@ -28,6 +28,12 @@ not identified by IP directly, but rather by ECS Task Family or by ECS Service
 Name. Furthermore, it is capable of proxying between multiple servers that meet
 the above criterion (randomly currently).
 
+It is also expected that it be used via either container links or sharing the
+network namespace with the consumer. In the case of linking, it does not
+`EXPOSE` the appropriate ports (due to them being dynamically discovered at
+runtime), and thus will not work with the `--icc` option disabled. This option
+is enabled by default however.
+
 ## Usage
 
 To use the Task Kite, simply add it to your task definition, link to it, and
