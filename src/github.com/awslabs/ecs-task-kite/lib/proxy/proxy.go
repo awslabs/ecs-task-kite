@@ -14,6 +14,7 @@
 package proxy
 
 import (
+	"errors"
 	"io"
 	"math/rand"
 	"net"
@@ -51,6 +52,47 @@ func New(port uint16) (*Proxy, error) {
 	return p, nil
 }
 
+func (p *Proxy) getBackend() (string, bool) {
+	p.l.RLock()
+	defer p.l.RUnlock()
+	if len(p.currentBackends) == 0 {
+		return "", false
+	}
+	// TODO, weighted random based on past errors
+	chosenBackend := p.currentBackends[rand.Intn(len(p.currentBackends))]
+	return chosenBackend, true
+}
+
+func (p *Proxy) createConnection(target string) (net.Conn, error) {
+	p.connsLock.Lock()
+	defer p.connsLock.Unlock()
+	if !p.active {
+		return nil, errors.New("Cannot proxy with inactive proxy")
+	}
+	backendConn, err := net.DialTimeout("tcp", target, proxyDialTimeout)
+	if err != nil {
+		if backendConn != nil {
+			// probably not needed, but no harm
+			backendConn.Close()
+		}
+		return nil, err
+	}
+	p.activeConnections = append(p.activeConnections, backendConn)
+	return backendConn, err
+}
+
+func (p *Proxy) deleteConnection(targetConn net.Conn) {
+	p.connsLock.Lock()
+	defer p.connsLock.Unlock()
+	for i, conn := range p.activeConnections {
+		if conn == targetConn {
+			// per https://code.google.com/p/go-wiki/wiki/SliceTricks, remove element from the slice
+			p.activeConnections[i], p.activeConnections[len(p.activeConnections)-1], p.activeConnections = p.activeConnections[len(p.activeConnections)-1], nil, p.activeConnections[:len(p.activeConnections)-1]
+			return
+		}
+	}
+}
+
 func (p *Proxy) serveLoop() {
 	for p.active {
 		conn, err := p.listener.Accept()
@@ -60,29 +102,42 @@ func (p *Proxy) serveLoop() {
 		}
 		log.Debug("Now listening for", p.listener.Addr().String())
 		go func(conn net.Conn) {
-			p.l.RLock()
-			if len(p.currentBackends) == 0 {
-				return
-			}
-			// TODO, weighted random based on past errors
-			chosenBackend := p.currentBackends[rand.Intn(len(p.currentBackends))]
-			p.l.RUnlock()
-
-			p.connsLock.Lock()
-			if !p.active {
-				return
-			}
-			log.Info("Proxying request to ", chosenBackend)
-			backendConn, err := net.DialTimeout("tcp", chosenBackend, proxyDialTimeout)
-			p.activeConnections = append(p.activeConnections, backendConn)
-			if err != nil {
-				p.connsLock.Unlock()
-				return
-			}
-			p.connsLock.Unlock()
-			go io.Copy(conn, backendConn)
-			io.Copy(backendConn, conn)
 			defer conn.Close()
+
+			chosenBackend, ok := p.getBackend()
+			if !ok {
+				log.Debug("Could not proxy connection; no viable backends; closing connection")
+				return
+			}
+
+			log.Info("Proxying request to ", chosenBackend)
+			backendConn, err := p.createConnection(chosenBackend)
+			defer p.deleteConnection(backendConn)
+			if err != nil {
+				log.Error("Could not proxy to " + chosenBackend + ": " + err.Error())
+				return
+			}
+			defer backendConn.Close()
+
+			waitBothDone := &sync.WaitGroup{}
+			waitBothDone.Add(1)
+			go func() {
+				_, err := io.Copy(conn, backendConn)
+				if err != nil {
+					log.Warn("Error proxying to " + chosenBackend + " while reading from it: " + err.Error())
+				}
+				// If we get here, that means
+				waitBothDone.Done()
+			}()
+			waitBothDone.Add(1)
+			go func() {
+				_, err := io.Copy(backendConn, conn)
+				if err != nil {
+					log.Warn("Error proxying to " + chosenBackend + " while writing to it: " + err.Error())
+				}
+				waitBothDone.Done()
+			}()
+			waitBothDone.Wait()
 		}(conn)
 	}
 }
