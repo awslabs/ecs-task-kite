@@ -4,8 +4,8 @@
 package mock_ecsiface
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	ecs "github.com/aws/aws-sdk-go/service/ecs"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // Mock of ECSAPI interface

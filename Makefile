@@ -30,6 +30,9 @@ vendor:
 generate:
 	go generate ./src/...
 
+test:
+	go test -v ./src/...
+
 clean:
 	rm -rf ./bin ./pkg ./vendor/pkg ./misc/ca-bundle.crt
 	-rmdir ./misc/
