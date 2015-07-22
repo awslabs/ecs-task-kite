@@ -19,7 +19,11 @@ import (
 	"github.com/awslabs/ecs-task-kite/lib/ecsclient"
 )
 
+// ContainerPorts returns all of the ports that a given container within the
+// tasks is listening on.
 func ContainerPorts(tasks []ecsclient.Task, containerName string) []uint16 {
+	// dedupe map to return the minimal array
+	seenPorts := make(map[uint16]bool)
 	output := make([]uint16, 0, len(tasks)/2)
 	for _, task := range tasks {
 		container := task.Container(containerName)
@@ -31,13 +35,18 @@ func ContainerPorts(tasks []ecsclient.Task, containerName string) []uint16 {
 		}
 		for _, binding := range container.NetworkBindings {
 			if binding.ContainerPort != nil {
-				output = append(output, uint16(*binding.ContainerPort))
+				if _, ok := seenPorts[uint16(*binding.ContainerPort)]; !ok {
+					output = append(output, uint16(*binding.ContainerPort))
+					seenPorts[uint16(*binding.ContainerPort)] = true
+				}
 			}
 		}
 	}
 	return output
 }
 
+// FilterIPPort returns the "ip:port" pair for the given containerName within
+// all tasks where the given container is known to be running.
 func FilterIPPort(tasks []ecsclient.Task, containerName string, containerPort uint16, publicIP bool) []string {
 	output := make([]string, 0, len(tasks)/2)
 	for _, task := range tasks {
@@ -52,16 +61,16 @@ func FilterIPPort(tasks []ecsclient.Task, containerName string, containerPort ui
 		if hostPort == 0 {
 			continue
 		}
-		var taskIp string
+		var taskIP string
 		if publicIP {
-			taskIp = task.PublicIP()
+			taskIP = task.PublicIP()
 		} else {
-			taskIp = task.PrivateIP()
+			taskIP = task.PrivateIP()
 		}
-		if taskIp == "" {
+		if taskIP == "" {
 			continue
 		}
-		output = append(output, fmt.Sprintf("%s:%d", taskIp, hostPort))
+		output = append(output, fmt.Sprintf("%s:%d", taskIP, hostPort))
 	}
 	return output
 }

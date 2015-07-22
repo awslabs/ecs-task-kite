@@ -141,13 +141,15 @@ func proxyNewPorts(tasks []ecsclient.Task, name *string, public *bool, container
 		if exists {
 			existingProxy.UpdateBackendHosts(ipPortPairs)
 		} else {
-			newProxy, err := proxy.New(port)
-			if err != nil {
-				log.Warn("Error listening on port", port)
-				continue
-			}
+			newProxy := proxy.New(port)
 			log.Info("Now proxying on port", port)
 			newProxy.UpdateBackendHosts(ipPortPairs)
+			go func() {
+				err := newProxy.Serve()
+				if err != nil {
+					log.Warn("Error listening on port", port)
+				}
+			}()
 			proxies[port] = newProxy
 		}
 	}

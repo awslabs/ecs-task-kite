@@ -37,6 +37,10 @@ clean:
 	rm -rf ./bin ./pkg ./vendor/pkg ./misc/ca-bundle.crt
 	-rmdir ./misc/
 
+lint:
+	go vet ./src/...
+	for pkg in $(shell go list -f "{{.Dir}}" ./src/... | grep -v "/mocks/"); do golint $$pkg; done
+
 deps:
 	@echo "Nothing here yet"
 #  go get github.com/constabulary/gb/...

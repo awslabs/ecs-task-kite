@@ -121,7 +121,7 @@ func TestListAllTasks(t *testing.T) {
 }
 
 func TestContainerPortsHelper(t *testing.T) {
-	container := ecsclient.Container{&ecs.Container{
+	container := ecsclient.Container{Container: &ecs.Container{
 		NetworkBindings: []*ecs.NetworkBinding{
 			&ecs.NetworkBinding{ContainerPort: aws.Long(9090)},
 		},

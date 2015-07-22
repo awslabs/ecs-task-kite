@@ -27,7 +27,16 @@ import (
 
 const proxyDialTimeout = 10 * time.Second
 
+// Proxy implements a tcp proxy for a given port to a collection of backend
+// ip+port locations.
+//
+// To use a Proxy, simply construct it and then call 'UpdateBackends' with an
+// array of backends, formatted as e.g. '10.0.0.1:8080', as frequently as you
+// like.
+// These backends will be randomly proxied to when a connection is made on the
+// port passed in at construction.
 type Proxy struct {
+	port     int
 	listener net.Listener
 	active   bool
 
@@ -38,18 +47,12 @@ type Proxy struct {
 	activeConnections []net.Conn
 }
 
-func New(port uint16) (*Proxy, error) {
-	l, err := net.Listen("tcp", ":"+strconv.Itoa(int(port)))
-	if err != nil {
-		return nil, err
-	}
-
-	p := &Proxy{
-		listener: l,
-		active:   true,
-	}
-	go p.serveLoop()
-	return p, nil
+// New returns a new proxy that listens on the passed in port. The proxy will
+// not begin listening immediately upon being constructed. You must call
+// 'Serve' before it will begin listening and proxying (preferably after
+// setting appropriate backends).
+func New(port uint16) *Proxy {
+	return &Proxy{active: false, port: int(port)}
 }
 
 func (p *Proxy) getBackend() (string, bool) {
@@ -93,7 +96,19 @@ func (p *Proxy) deleteConnection(targetConn net.Conn) {
 	}
 }
 
-func (p *Proxy) serveLoop() {
+// Serve begins listening for traffic and serving it. It will block
+// indefinitely in the happy path, so it's likely best to call with a
+// goroutine.
+// If it's unable to listen it will return an error.
+func (p *Proxy) Serve() error {
+	l, err := net.Listen("tcp", ":"+strconv.Itoa(int(p.port)))
+	if err != nil {
+		return err
+	}
+
+	p.active = true
+	p.listener = l
+
 	for p.active {
 		conn, err := p.listener.Accept()
 		if err != nil {
@@ -140,14 +155,18 @@ func (p *Proxy) serveLoop() {
 			waitBothDone.Wait()
 		}(conn)
 	}
+	return nil
 }
 
+// UpdateBackendHosts sets the list of available backends to the given argument.
+// The argument should be an array of strings formatted as 'ip:port'
 func (p *Proxy) UpdateBackendHosts(ipPortPairs []string) {
 	p.l.Lock()
 	defer p.l.Unlock()
 	p.currentBackends = ipPortPairs
 }
 
+// Close closes all current proxying connections and stops listening.
 func (p *Proxy) Close() {
 	log.Info("Cleaning up proxy on address", p.listener.Addr().String())
 	p.l.Lock()
