@@ -26,7 +26,7 @@
 			"sourceVolume": "nginxdata",
 			"containerPath": "/nginx"
 		}],
-		"command": ["sh", "-c", "i=0; while true; do echo \"$i: $(date) $(wget -q -O- http://instance/index.txt)<br>\" >> /tmp/ids.htm; echo \"<!DOCTYPE html><html><body><p>Below are observed instance ids and the time they were observed; refresh the page to see the current list. <br><br> $(cat /tmp/ids.htm | sort -nr)</body></html>\" > /nginx/index.html; sleep 3; i=$((i+1)); done"]
+		"command": ["sh", "-c", "i=0; while true; do echo \"$i: $(date) $(wget -q -O- http://instance/index.txt)<br>\" >> /tmp/ids.htm; echo \"<!DOCTYPE html><html><body><p>Below are observed instance ids and the time they were observed; refresh the page to see the current list.</p> <br><br> $(cat /tmp/ids.htm | sort -nr)</body></html>\" > /nginx/index.html; sleep 3; i=$((i+1)); done"]
 	}, {
 		"name": "ambassador",
 		"image": "amazon/ecs-task-kite:latest",
