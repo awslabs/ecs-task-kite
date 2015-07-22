@@ -271,12 +271,12 @@ func (c *ECSClient) Tasks(family, service *string) ([]Task, error) {
 
 	ec2InstanceIds := []*string{}
 	containerInstances := map[string]*ecs.ContainerInstance{}
-	for i := 0; i < len(containerInstanceArns); i += 100 {
+	for i := 0; i < len(containerInstanceArns); i += ecsChunkSize {
 		var chunk []*string
-		if i+100 > len(containerInstanceArns) {
+		if i+ecsChunkSize > len(containerInstanceArns) {
 			chunk = containerInstanceArns[i:len(containerInstanceArns)]
 		} else {
-			chunk = containerInstanceArns[i : i+100]
+			chunk = containerInstanceArns[i : i+ecsChunkSize]
 		}
 		descrContainerInstances, err := c.ecs.DescribeContainerInstances(&ecs.DescribeContainerInstancesInput{
 			Cluster:            &c.cluster,

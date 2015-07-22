@@ -34,7 +34,7 @@ func _main() int {
 	cluster := flag.String("cluster", "default", "Cluster")
 	family := flag.String("family", "", "Family, optionally with revision")
 	service := flag.String("service", "", "Service to proxy to; *must* be the service name")
-	name := flag.String("name", "", "Container name within that task family")
+	name := flag.String("name", "", "Container name within that task family or service")
 	loglevel := flag.String("loglevel", "info", "Loglevel panic|fatal|error|warn|info|debug")
 
 	flag.Parse()
@@ -61,8 +61,36 @@ func _main() int {
 }
 
 func proxyTasks(client ecsclient.ECSSimpleClient, family, service, name *string, public *bool) {
-	taskUpdates := make(chan []ecsclient.Task, 0)
+	taskUpdates := collectTaskUpdates(client, family, service)
+	// map of port -> proxy
+	proxies := make(map[uint16]*proxy.Proxy)
+	for {
+		// Get changes to what tasks are running in the given family/service
+		tasks := <-taskUpdates
+		if len(tasks) == 0 {
+			log.Debug("No tasks in update; ignoring")
+			continue
+		}
+		// Find what ports those containers are listening on so we can pretend to be them
+		containerPorts := taskhelpers.ContainerPorts(tasks, *name)
+		if len(containerPorts) == 0 {
+			log.Warn("No container ports; not proxying anything")
+			// Continue anyways to ensure that we remove any stale listeners
+		}
+		// If there's any ports that are no longer needed (e.g. someone updates a
+		// service to be of a task that no longer listens on port 80 and 8080, only
+		// 80, we stop listening on 8080 here and close any existing connections)
+		unproxyRemovedPorts(containerPorts, proxies)
 
+		// Verify that we *are* listening on all the ports the given container is
+		// and proxying appropriately; create any missing proxies, and update the
+		// hosts behind all proxies
+		proxyNewPorts(tasks, name, public, containerPorts, proxies)
+	}
+}
+
+func collectTaskUpdates(client ecsclient.ECSSimpleClient, family, service *string) <-chan []ecsclient.Task {
+	taskUpdates := make(chan []ecsclient.Task, 0)
 	go func() {
 		for {
 			log.Debug("Updating task list")
@@ -77,66 +105,50 @@ func proxyTasks(client ecsclient.ECSSimpleClient, family, service, name *string,
 			time.Sleep((time.Duration(rand.Intn(25)) + 45) * time.Second)
 		}
 	}()
+	return taskUpdates
+}
 
-	// map of port -> proxy
-	proxies := make(map[uint16]*proxy.Proxy)
-	for {
-		// Get changes to what tasks are listed by the configured criterion at the top
-		tasks := <-taskUpdates
-		if len(tasks) == 0 {
-			log.Debug("No tasks in update; ignoring")
-			continue
-		}
-		// Find what ports those containers are listening on so we can pretend to be them
-		containerPorts := taskhelpers.ContainerPorts(tasks, *name)
-		if len(containerPorts) == 0 {
-			log.Debug("No container ports; ignoring")
-			continue
-		}
-		// If there's any ports that are no longer needed (e.g. someone updates a
-		// service to be of a task that no longer listens on port 80 and 8080, only
-		// 80, we stop listening on 8080 here and close any existing connections)
-		var currentPorts []uint16
-		for port := range proxies {
-			currentPorts = append(currentPorts, port)
-		}
-		for _, port := range currentPorts {
-			hasListener := false
-			for _, containerPort := range containerPorts {
-				if port == containerPort {
-					hasListener = true
-					break
-				}
-			}
-			if !hasListener {
-				// Containers we're immitating not listening on it, time to pack up
-				staleProxy := proxies[port]
-				staleProxy.Close()
-				delete(proxies, port)
+func unproxyRemovedPorts(containerPorts []uint16, proxies map[uint16]*proxy.Proxy) {
+	var currentPorts []uint16
+	for port := range proxies {
+		currentPorts = append(currentPorts, port)
+	}
+	for _, port := range currentPorts {
+		hasListener := false
+		for _, containerPort := range containerPorts {
+			if port == containerPort {
+				hasListener = true
+				break
 			}
 		}
+		if !hasListener {
+			// Containers we're immitating not listening on it, time to pack up
+			log.Warnf("No longer listening on 'stale' port: %v", port)
+			staleProxy := proxies[port]
+			staleProxy.Close()
+			delete(proxies, port)
+		}
+	}
+}
 
-		// Verify that we *are* listening on all the ports the given container is
-		// and proxying appropriately; create any missing proxies, and update the
-		// hosts behind all proxies
-		for _, port := range containerPorts {
-			ipPortPairs := taskhelpers.FilterIPPort(tasks, *name, port, *public)
-			if len(ipPortPairs) == 0 {
+func proxyNewPorts(tasks []ecsclient.Task, name *string, public *bool, containerPorts []uint16, proxies map[uint16]*proxy.Proxy) {
+	for _, port := range containerPorts {
+		ipPortPairs := taskhelpers.FilterIPPort(tasks, *name, port, *public)
+		if len(ipPortPairs) == 0 {
+			continue
+		}
+		existingProxy, exists := proxies[port]
+		if exists {
+			existingProxy.UpdateBackendHosts(ipPortPairs)
+		} else {
+			newProxy, err := proxy.New(port)
+			if err != nil {
+				log.Warn("Error listening on port", port)
 				continue
 			}
-			existingProxy, exists := proxies[port]
-			if exists {
-				existingProxy.UpdateBackendHosts(ipPortPairs)
-			} else {
-				newProxy, err := proxy.New(port)
-				if err != nil {
-					log.Warn("Error listening on port", port)
-					continue
-				}
-				log.Info("Now proxying on port", port)
-				newProxy.UpdateBackendHosts(ipPortPairs)
-				proxies[port] = newProxy
-			}
+			log.Info("Now proxying on port", port)
+			newProxy.UpdateBackendHosts(ipPortPairs)
+			proxies[port] = newProxy
 		}
 	}
 }
