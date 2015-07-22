@@ -23,14 +23,14 @@ import (
 func TestRegionDefaults(t *testing.T) {
 	os.Clearenv()
 	os.Setenv("AWS_REGION", "us-east-1")
-	client := New("", "")
+	client := New("", "", nil, nil)
 	if client.(*ECSClient).ecs.(*ecs.ECS).Config.Region != "us-east-1" {
 		t.Error("AWS_REGION didn't set the region")
 	}
 
 	os.Clearenv()
 	os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
-	client = New("", "")
+	client = New("", "", nil, nil)
 	if client.(*ECSClient).ecs.(*ecs.ECS).Config.Region != "us-east-1" {
 		t.Error("AWS_DEFAULT_REGION didn't set the region")
 	}
@@ -38,7 +38,7 @@ func TestRegionDefaults(t *testing.T) {
 	os.Clearenv()
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("AWS_DEFAULT_REGION", "us-west-2")
-	client = New("", "")
+	client = New("", "", nil, nil)
 	if client.(*ECSClient).ecs.(*ecs.ECS).Config.Region != "us-east-1" {
 		t.Error("AWS_REGION should take priority")
 	}
@@ -49,5 +49,5 @@ func TestRegionDefaults(t *testing.T) {
 			t.Error("Not having a region should be a panic")
 		}
 	}()
-	client = New("", "")
+	client = New("", "", nil, nil)
 }

@@ -17,6 +17,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/awslabs/ecs-task-kite/lib/ecsclient"
@@ -37,9 +38,7 @@ func setup(t *testing.T) (*gomock.Controller, ecsclient.ECSSimpleClient, *mock_e
 	ctrl := gomock.NewController(t)
 	mockecs := mock_ecsiface.NewMockECSAPI(ctrl)
 	mockec2 := mock_ec2iface.NewMockEC2API(ctrl)
-	ecsClient := ecsclient.New(cluster, "us-east-1")
-	ecsClient.(*ecsclient.ECSClient).SetECS(mockecs)
-	ecsClient.(*ecsclient.ECSClient).SetEC2(mockec2)
+	ecsClient := ecsclient.New(cluster, "us-east-1", mockecs, mockec2)
 	return ctrl, ecsClient, mockecs, mockec2
 }
 
@@ -83,19 +82,16 @@ func TestListAllTasks(t *testing.T) {
 		},
 	}
 	gomock.InOrder(
-		mockecs.EXPECT().ListTasks(&ecs.ListTasksInput{Cluster: pcluster, NextToken: strptr("")}).Return(
-			&ecs.ListTasksOutput{
-				TaskARNs: mockTaskArns,
-			},
-			nil,
-		),
+		mockecs.EXPECT().ListTasksPages(&ecs.ListTasksInput{Cluster: pcluster}, gomock.Any()).Do(func(_, f interface{}) {
+			f.(func(*ecs.ListTasksOutput, bool) bool)(&ecs.ListTasksOutput{TaskARNs: mockTaskArns}, true)
+		}).Return(nil),
 		mockecs.EXPECT().DescribeTasks(&ecs.DescribeTasksInput{Cluster: pcluster, Tasks: mockTaskArns}).Return(
 			&ecs.DescribeTasksOutput{
 				Tasks: mockTasks,
 			},
 			nil,
 		),
-		mockecs.EXPECT().DescribeContainerInstances(&ecs.DescribeContainerInstancesInput{Cluster: pcluster, ContainerInstances: mockCIArns}).Return(
+		mockecs.EXPECT().DescribeContainerInstances(describeContainerInstanceMatcher{&ecs.DescribeContainerInstancesInput{Cluster: pcluster, ContainerInstances: mockCIArns}}).Return(
 			&ecs.DescribeContainerInstancesOutput{
 				ContainerInstances: mockCIs,
 			},
@@ -122,4 +118,48 @@ func TestListAllTasks(t *testing.T) {
 			t.Fatal("Task's ec2 instance did not match expected")
 		}
 	}
+}
+
+func TestContainerPortsHelper(t *testing.T) {
+	container := ecsclient.Container{&ecs.Container{
+		NetworkBindings: []*ecs.NetworkBinding{
+			&ecs.NetworkBinding{ContainerPort: aws.Long(9090)},
+		},
+	}}
+
+	if len(container.ContainerPorts()) != 1 || container.ContainerPorts()[0] != 9090 {
+		t.Fatalf("Expected container ports to be 9090; were %v", container.ContainerPorts())
+	}
+}
+
+type describeContainerInstanceMatcher struct {
+	*ecs.DescribeContainerInstancesInput
+}
+
+// Checks for the same clusters and arns, ignoring order
+func (lhs describeContainerInstanceMatcher) Matches(x interface{}) bool {
+	rhs, ok := x.(*ecs.DescribeContainerInstancesInput)
+	if !ok {
+		return false
+	}
+	if *lhs.Cluster != *rhs.Cluster {
+		return false
+	}
+	if len(lhs.ContainerInstances) != len(rhs.ContainerInstances) {
+		return false
+	}
+	arns := make(map[string]bool)
+	for _, arn := range lhs.ContainerInstances {
+		arns[*arn] = true
+	}
+	for _, arn := range rhs.ContainerInstances {
+		if _, ok := arns[*arn]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func (describeContainerInstanceMatcher) String() string {
+	return "Container Instance Describe Matcher"
 }

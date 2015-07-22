@@ -29,7 +29,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/aws/aws-sdk-go/service/ecs/ecsiface"
+	"github.com/awslabs/ecs-task-kite/lib/ecsclient/ecsiface" // Note: replace with upstream after https://github.com/aws/aws-sdk-go/pull/308 gets resolved
 )
 
 // ecsChunkSize is the maximum number of elements to pass into a describe api
@@ -106,10 +106,23 @@ type ECSClient struct {
 	cluster string
 }
 
-func New(cluster string, region string) ECSSimpleClient {
-	httpClient := &http.Client{
-		Timeout:   3 * time.Second,
-		Transport: &userAgentedRoundTripper{},
+// New creates a new ECSSimpleClient. The 'ecsclient' and 'ec2client' arguments
+// may both be nil in which case they will be constructed for you.
+// If region is the empty string, it will be inferred from the environment or
+// instance metadata service (in that order of preference). If a region cannot
+// be found, this function will panic.
+func New(cluster string, region string, ecsclient ecsiface.ECSAPI, ec2client ec2iface.EC2API) ECSSimpleClient {
+	// lazily init the http client in case it's not needed
+	var httpClient *http.Client
+	getHttpClient := func() *http.Client {
+		// no need for threadsafety since this is only referenced in this function
+		if httpClient == nil {
+			httpClient = &http.Client{
+				Timeout:   3 * time.Second,
+				Transport: &userAgentedRoundTripper{},
+			}
+		}
+		return httpClient
 	}
 
 	if region == "" {
@@ -121,7 +134,7 @@ func New(cluster string, region string) ECSSimpleClient {
 
 	if region == "" {
 		log.Debug("Trying to get region from instance identity doc")
-		iidResp, err := httpClient.Get(instanceIdentityDocumentResource)
+		iidResp, err := getHttpClient().Get(instanceIdentityDocumentResource)
 		if err != nil {
 			log.Debug("Error getting iid resource ", err)
 		} else {
@@ -141,25 +154,21 @@ func New(cluster string, region string) ECSSimpleClient {
 	}
 	log.Info("Region: " + region)
 
-	cfg := (*aws.DefaultConfig).Merge(&aws.Config{Region: region, HTTPClient: httpClient})
+	if ecsclient == nil || ec2client == nil {
+		cfg := (*aws.DefaultConfig).Merge(&aws.Config{Region: region, HTTPClient: getHttpClient()})
+		if ecsclient == nil {
+			ecsclient = ecs.New(cfg)
+		}
+		if ec2client == nil {
+			ec2client = ec2.New(cfg)
+		}
+	}
 
-	ecsSdkClient := ecs.New(cfg)
-	ec2SdkClient := ec2.New(cfg)
 	return &ECSClient{
 		cluster: cluster,
-		ecs:     ecsSdkClient,
-		ec2:     ec2SdkClient,
+		ecs:     ecsclient,
+		ec2:     ec2client,
 	}
-}
-
-// SetECS sets the ecs client implementation; meant to inject a mock for testing
-func (c *ECSClient) SetECS(ecs ecsiface.ECSAPI) {
-	c.ecs = ecs
-}
-
-// SetEC2 sets the ec2 client implementation; meant to inject a mock for testing
-func (c *ECSClient) SetEC2(ec2 ec2iface.EC2API) {
-	c.ec2 = ec2
 }
 
 func (c *ECSClient) allTasks(family, service *string) ([]*ecs.Task, error) {

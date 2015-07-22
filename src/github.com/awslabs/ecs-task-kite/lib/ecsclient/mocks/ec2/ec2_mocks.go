@@ -4,8 +4,8 @@
 package mock_ec2iface
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	ec2 "github.com/aws/aws-sdk-go/service/ec2"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // Mock of EC2API interface
@@ -1019,6 +1019,16 @@ func (_mr *_MockEC2APIRecorder) DescribeInstanceStatus(arg0 interface{}) *gomock
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeInstanceStatus", arg0)
 }
 
+func (_m *MockEC2API) DescribeInstanceStatusPages(_param0 *ec2.DescribeInstanceStatusInput, _param1 func(*ec2.DescribeInstanceStatusOutput, bool) bool) error {
+	ret := _m.ctrl.Call(_m, "DescribeInstanceStatusPages", _param0, _param1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockEC2APIRecorder) DescribeInstanceStatusPages(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeInstanceStatusPages", arg0, arg1)
+}
+
 func (_m *MockEC2API) DescribeInstances(_param0 *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
 	ret := _m.ctrl.Call(_m, "DescribeInstances", _param0)
 	ret0, _ := ret[0].(*ec2.DescribeInstancesOutput)
@@ -1028,6 +1038,16 @@ func (_m *MockEC2API) DescribeInstances(_param0 *ec2.DescribeInstancesInput) (*e
 
 func (_mr *_MockEC2APIRecorder) DescribeInstances(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeInstances", arg0)
+}
+
+func (_m *MockEC2API) DescribeInstancesPages(_param0 *ec2.DescribeInstancesInput, _param1 func(*ec2.DescribeInstancesOutput, bool) bool) error {
+	ret := _m.ctrl.Call(_m, "DescribeInstancesPages", _param0, _param1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockEC2APIRecorder) DescribeInstancesPages(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeInstancesPages", arg0, arg1)
 }
 
 func (_m *MockEC2API) DescribeInternetGateways(_param0 *ec2.DescribeInternetGatewaysInput) (*ec2.DescribeInternetGatewaysOutput, error) {
@@ -1162,6 +1182,16 @@ func (_mr *_MockEC2APIRecorder) DescribeReservedInstancesModifications(arg0 inte
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeReservedInstancesModifications", arg0)
 }
 
+func (_m *MockEC2API) DescribeReservedInstancesModificationsPages(_param0 *ec2.DescribeReservedInstancesModificationsInput, _param1 func(*ec2.DescribeReservedInstancesModificationsOutput, bool) bool) error {
+	ret := _m.ctrl.Call(_m, "DescribeReservedInstancesModificationsPages", _param0, _param1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockEC2APIRecorder) DescribeReservedInstancesModificationsPages(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeReservedInstancesModificationsPages", arg0, arg1)
+}
+
 func (_m *MockEC2API) DescribeReservedInstancesOfferings(_param0 *ec2.DescribeReservedInstancesOfferingsInput) (*ec2.DescribeReservedInstancesOfferingsOutput, error) {
 	ret := _m.ctrl.Call(_m, "DescribeReservedInstancesOfferings", _param0)
 	ret0, _ := ret[0].(*ec2.DescribeReservedInstancesOfferingsOutput)
@@ -1171,6 +1201,16 @@ func (_m *MockEC2API) DescribeReservedInstancesOfferings(_param0 *ec2.DescribeRe
 
 func (_mr *_MockEC2APIRecorder) DescribeReservedInstancesOfferings(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeReservedInstancesOfferings", arg0)
+}
+
+func (_m *MockEC2API) DescribeReservedInstancesOfferingsPages(_param0 *ec2.DescribeReservedInstancesOfferingsInput, _param1 func(*ec2.DescribeReservedInstancesOfferingsOutput, bool) bool) error {
+	ret := _m.ctrl.Call(_m, "DescribeReservedInstancesOfferingsPages", _param0, _param1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockEC2APIRecorder) DescribeReservedInstancesOfferingsPages(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeReservedInstancesOfferingsPages", arg0, arg1)
 }
 
 func (_m *MockEC2API) DescribeRouteTables(_param0 *ec2.DescribeRouteTablesInput) (*ec2.DescribeRouteTablesOutput, error) {
@@ -1215,6 +1255,16 @@ func (_m *MockEC2API) DescribeSnapshots(_param0 *ec2.DescribeSnapshotsInput) (*e
 
 func (_mr *_MockEC2APIRecorder) DescribeSnapshots(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeSnapshots", arg0)
+}
+
+func (_m *MockEC2API) DescribeSnapshotsPages(_param0 *ec2.DescribeSnapshotsInput, _param1 func(*ec2.DescribeSnapshotsOutput, bool) bool) error {
+	ret := _m.ctrl.Call(_m, "DescribeSnapshotsPages", _param0, _param1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockEC2APIRecorder) DescribeSnapshotsPages(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeSnapshotsPages", arg0, arg1)
 }
 
 func (_m *MockEC2API) DescribeSpotDatafeedSubscription(_param0 *ec2.DescribeSpotDatafeedSubscriptionInput) (*ec2.DescribeSpotDatafeedSubscriptionOutput, error) {
@@ -1281,6 +1331,16 @@ func (_m *MockEC2API) DescribeSpotPriceHistory(_param0 *ec2.DescribeSpotPriceHis
 
 func (_mr *_MockEC2APIRecorder) DescribeSpotPriceHistory(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeSpotPriceHistory", arg0)
+}
+
+func (_m *MockEC2API) DescribeSpotPriceHistoryPages(_param0 *ec2.DescribeSpotPriceHistoryInput, _param1 func(*ec2.DescribeSpotPriceHistoryOutput, bool) bool) error {
+	ret := _m.ctrl.Call(_m, "DescribeSpotPriceHistoryPages", _param0, _param1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockEC2APIRecorder) DescribeSpotPriceHistoryPages(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeSpotPriceHistoryPages", arg0, arg1)
 }
 
 func (_m *MockEC2API) DescribeSubnets(_param0 *ec2.DescribeSubnetsInput) (*ec2.DescribeSubnetsOutput, error) {
@@ -1415,6 +1475,16 @@ func (_mr *_MockEC2APIRecorder) DescribeVolumeStatus(arg0 interface{}) *gomock.C
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeVolumeStatus", arg0)
 }
 
+func (_m *MockEC2API) DescribeVolumeStatusPages(_param0 *ec2.DescribeVolumeStatusInput, _param1 func(*ec2.DescribeVolumeStatusOutput, bool) bool) error {
+	ret := _m.ctrl.Call(_m, "DescribeVolumeStatusPages", _param0, _param1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockEC2APIRecorder) DescribeVolumeStatusPages(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeVolumeStatusPages", arg0, arg1)
+}
+
 func (_m *MockEC2API) DescribeVolumes(_param0 *ec2.DescribeVolumesInput) (*ec2.DescribeVolumesOutput, error) {
 	ret := _m.ctrl.Call(_m, "DescribeVolumes", _param0)
 	ret0, _ := ret[0].(*ec2.DescribeVolumesOutput)
@@ -1424,6 +1494,16 @@ func (_m *MockEC2API) DescribeVolumes(_param0 *ec2.DescribeVolumesInput) (*ec2.D
 
 func (_mr *_MockEC2APIRecorder) DescribeVolumes(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeVolumes", arg0)
+}
+
+func (_m *MockEC2API) DescribeVolumesPages(_param0 *ec2.DescribeVolumesInput, _param1 func(*ec2.DescribeVolumesOutput, bool) bool) error {
+	ret := _m.ctrl.Call(_m, "DescribeVolumesPages", _param0, _param1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockEC2APIRecorder) DescribeVolumesPages(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeVolumesPages", arg0, arg1)
 }
 
 func (_m *MockEC2API) DetachClassicLinkVPC(_param0 *ec2.DetachClassicLinkVPCInput) (*ec2.DetachClassicLinkVPCOutput, error) {
