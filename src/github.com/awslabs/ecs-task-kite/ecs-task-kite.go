@@ -72,7 +72,7 @@ func proxyTasks(client ecsclient.ECSSimpleClient, family, service, name *string,
 			continue
 		}
 		// Find what ports those containers are listening on so we can pretend to be them
-		containerPorts := taskhelpers.ContainerPorts(tasks, *name)
+		containerPorts := taskhelpers.ContainerPorts(tasks, *name, "tcp")
 		if len(containerPorts) == 0 {
 			log.Warn("No container ports; not proxying anything")
 			// Continue anyways to ensure that we remove any stale listeners

@@ -21,7 +21,7 @@ import (
 
 // ContainerPorts returns all of the ports that a given container within the
 // tasks is listening on.
-func ContainerPorts(tasks []ecsclient.Task, containerName string) []uint16 {
+func ContainerPorts(tasks []ecsclient.Task, containerName string, protocol string) []uint16 {
 	// dedupe map to return the minimal array
 	seenPorts := make(map[uint16]bool)
 	output := make([]uint16, 0, len(tasks)/2)
@@ -33,12 +33,11 @@ func ContainerPorts(tasks []ecsclient.Task, containerName string) []uint16 {
 		if *container.LastStatus != "RUNNING" {
 			continue
 		}
-		for _, binding := range container.NetworkBindings {
-			if binding.ContainerPort != nil {
-				if _, ok := seenPorts[uint16(*binding.ContainerPort)]; !ok {
-					output = append(output, uint16(*binding.ContainerPort))
-					seenPorts[uint16(*binding.ContainerPort)] = true
-				}
+		ports := container.ContainerPorts(protocol)
+		for _, port := range ports {
+			if _, ok := seenPorts[port]; !ok {
+				output = append(output, port)
+				seenPorts[port] = true
 			}
 		}
 	}

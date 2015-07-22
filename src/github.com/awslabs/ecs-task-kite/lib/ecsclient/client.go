@@ -51,11 +51,21 @@ type Container struct {
 }
 
 // ContainerPorts returns the container side of all the port bindings specified
-// (both dynamic and static) in a container
-func (c *Container) ContainerPorts() []uint16 {
+// (both dynamic and static) in a container. It takes the protocol to filter by
+// as an argument. It should be 'tcp' or 'udp'.
+func (c *Container) ContainerPorts(protocol string) []uint16 {
 	ports := make([]uint16, 0, len(c.NetworkBindings))
 	for _, binding := range c.NetworkBindings {
 		if binding == nil || binding.ContainerPort == nil {
+			// Skip anything without bindings
+			continue
+		}
+		if binding.Protocol != nil && *binding.Protocol != protocol {
+			// wrong protocol
+			continue
+		}
+		if binding.Protocol == nil && protocol != "tcp" {
+			// default/nil = tcp, so wrong protocol anyways
 			continue
 		}
 		ports = append(ports, uint16(*binding.ContainerPort))
