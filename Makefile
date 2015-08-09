@@ -11,12 +11,13 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-export GOPATH=$(shell pwd):$(shell pwd)/vendor
+GOPATH := $(GOPATH):$(shell pwd)/vendor
 
 all: static-go-binary ./misc/ca-bundle.crt
 	docker build -q -t amazon/ecs-task-kite:latest .
 
 static-go-binary:
+	@echo $$GOPATH
 	@mkdir -p bin
 	CGO_ENABLED=0 go build -a -installsuffix cgo -o ./bin/ecs-task-kite github.com/awslabs/ecs-task-kite/
 
