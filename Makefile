@@ -25,14 +25,11 @@ static-go-binary:
 	@mkdir -p misc
 	curl -s https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt > ./misc/ca-bundle.crt
 
-vendor:
-	cd vendor && bash vendor.sh
-
 generate:
 	go generate ./...
 
 test:
-	go test -v ./...
+	go test ./...
 
 clean:
 	rm -rf ./bin ./pkg ./vendor/pkg ./misc/ca-bundle.crt

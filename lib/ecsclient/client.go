@@ -29,7 +29,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/awslabs/ecs-task-kite/lib/ecsclient/ecsiface" // Note: replace with upstream after https://github.com/aws/aws-sdk-go/pull/308 gets resolved
+	"github.com/aws/aws-sdk-go/service/ecs/ecsiface"
 )
 
 // ecsChunkSize is the maximum number of elements to pass into a describe api
