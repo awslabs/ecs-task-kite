@@ -29,23 +29,15 @@ vendor:
 	cd vendor && bash vendor.sh
 
 generate:
-	go generate ./src/...
+	go generate ./...
 
 test:
-	go test -v ./src/...
+	go test -v ./...
 
 clean:
 	rm -rf ./bin ./pkg ./vendor/pkg ./misc/ca-bundle.crt
 	-rmdir ./misc/
 
 lint:
-	go vet ./src/...
-	for pkg in $(shell go list -f "{{.Dir}}" ./src/... | grep -v "/mocks/"); do golint $$pkg; done
-
-deps:
-	@echo "Nothing here yet"
-#  go get github.com/constabulary/gb/...
-#  -- It's desirable to use 'gb' over 'go build' in the future, but currently
-#      it does not support compiling static binaries. The directory structure
-#      is already laid out for it though, so it should be an easy switch once
-#      it does, and you can already use it if you desire.
+	go vet ./...
+	for pkg in $(shell go list -f "{{.Dir}}" ./... | grep -v "/mocks/"); do golint $$pkg; done

@@ -2,3 +2,4 @@
 /pkg
 /vendor/pkg
 /misc/ca-bundle.crt
+/Godeps/_workspace
