@@ -102,7 +102,7 @@ func collectTaskUpdates(client ecsclient.ECSSimpleClient, family, service *strin
 				taskUpdates <- tasks
 			}
 			log.Debug("Sleeping until next update")
-			time.Sleep((time.Duration(rand.Intn(25)) + 45) * time.Second)
+			time.Sleep((time.Duration(rand.Intn(5)) + 5) * time.Second)
 		}
 	}()
 	return taskUpdates
