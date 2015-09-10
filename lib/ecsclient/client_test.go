@@ -51,39 +51,39 @@ func TestListAllTasks(t *testing.T) {
 	mockEC2Ids := []*string{strptr("i-1"), strptr("i-2")}
 	mockTasks := []*ecs.Task{
 		&ecs.Task{
-			TaskARN:              mockTaskArns[0],
+			TaskArn:              mockTaskArns[0],
 			LastStatus:           strptr("RUNNING"),
-			ContainerInstanceARN: mockCIArns[0],
+			ContainerInstanceArn: mockCIArns[0],
 		},
 		&ecs.Task{
-			TaskARN:              mockTaskArns[1],
+			TaskArn:              mockTaskArns[1],
 			LastStatus:           strptr("RUNNING"),
-			ContainerInstanceARN: mockCIArns[1],
+			ContainerInstanceArn: mockCIArns[1],
 		},
 	}
 	mockCIs := []*ecs.ContainerInstance{
 		&ecs.ContainerInstance{
-			ContainerInstanceARN: mockCIArns[0],
-			EC2InstanceID:        mockEC2Ids[0],
+			ContainerInstanceArn: mockCIArns[0],
+			Ec2InstanceId:        mockEC2Ids[0],
 		},
 		&ecs.ContainerInstance{
-			ContainerInstanceARN: mockCIArns[1],
-			EC2InstanceID:        mockEC2Ids[1],
+			ContainerInstanceArn: mockCIArns[1],
+			Ec2InstanceId:        mockEC2Ids[1],
 		},
 	}
 	mockEC2Instances := []*ec2.Instance{
 		&ec2.Instance{
-			InstanceID:      mockEC2Ids[0],
-			PublicIPAddress: strptr("1.1.1.1"),
+			InstanceId:      mockEC2Ids[0],
+			PublicIpAddress: strptr("1.1.1.1"),
 		},
 		&ec2.Instance{
-			InstanceID:      mockEC2Ids[1],
-			PublicIPAddress: strptr("2.2.2.2"),
+			InstanceId:      mockEC2Ids[1],
+			PublicIpAddress: strptr("2.2.2.2"),
 		},
 	}
 	gomock.InOrder(
 		mockecs.EXPECT().ListTasksPages(&ecs.ListTasksInput{Cluster: pcluster}, gomock.Any()).Do(func(_, f interface{}) {
-			f.(func(*ecs.ListTasksOutput, bool) bool)(&ecs.ListTasksOutput{TaskARNs: mockTaskArns}, true)
+			f.(func(*ecs.ListTasksOutput, bool) bool)(&ecs.ListTasksOutput{TaskArns: mockTaskArns}, true)
 		}).Return(nil),
 		mockecs.EXPECT().DescribeTasks(&ecs.DescribeTasksInput{Cluster: pcluster, Tasks: mockTaskArns}).Return(
 			&ecs.DescribeTasksOutput{
@@ -97,7 +97,7 @@ func TestListAllTasks(t *testing.T) {
 			},
 			nil,
 		),
-		mockec2.EXPECT().DescribeInstances(&ec2.DescribeInstancesInput{InstanceIDs: mockEC2Ids}).Return(&ec2.DescribeInstancesOutput{
+		mockec2.EXPECT().DescribeInstances(&ec2.DescribeInstancesInput{InstanceIds: mockEC2Ids}).Return(&ec2.DescribeInstancesOutput{
 			Reservations: []*ec2.Reservation{
 				&ec2.Reservation{Instances: mockEC2Instances},
 			},
@@ -121,7 +121,7 @@ func TestListAllTasks(t *testing.T) {
 }
 
 func networkBinding(port uint16, proto string) *ecs.NetworkBinding {
-	return &ecs.NetworkBinding{ContainerPort: aws.Long(int64(port)), Protocol: aws.String(proto)}
+	return &ecs.NetworkBinding{ContainerPort: aws.Int64(int64(port)), Protocol: aws.String(proto)}
 }
 
 func TestContainerPortsHelper(t *testing.T) {
@@ -173,7 +173,7 @@ func TestContainerPortsHelper(t *testing.T) {
 func TestContainerPortsHelperWithProtocol(t *testing.T) {
 	container := ecsclient.Container{Container: &ecs.Container{
 		NetworkBindings: []*ecs.NetworkBinding{
-			&ecs.NetworkBinding{ContainerPort: aws.Long(9090)},
+			&ecs.NetworkBinding{ContainerPort: aws.Int64(9090)},
 		},
 	}}
 

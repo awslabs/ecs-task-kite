@@ -86,8 +86,8 @@ func (c *Container) ResolvePort(containerPort uint16) uint16 {
 // PublicIP returns the public ip address of the EC2 instance a task is running
 // on. If it cannot be found, it returns the empty string.
 func (t *Task) PublicIP() string {
-	if t.EC2Instance != nil && t.EC2Instance.PublicIPAddress != nil {
-		return *t.EC2Instance.PublicIPAddress
+	if t.EC2Instance != nil && t.EC2Instance.PublicIpAddress != nil {
+		return *t.EC2Instance.PublicIpAddress
 	}
 	return ""
 }
@@ -95,8 +95,8 @@ func (t *Task) PublicIP() string {
 // PrivateIP returns the private ip address of the EC2 instance a task is
 // running on. If it cannot be found, it returns the empty string.
 func (t *Task) PrivateIP() string {
-	if t.EC2Instance != nil && t.EC2Instance.PrivateIPAddress != nil {
-		return *t.EC2Instance.PrivateIPAddress
+	if t.EC2Instance != nil && t.EC2Instance.PrivateIpAddress != nil {
+		return *t.EC2Instance.PrivateIpAddress
 	}
 	return ""
 }
@@ -178,7 +178,7 @@ func New(cluster string, region string, ecsclient ecsiface.ECSAPI, ec2client ec2
 	log.Info("Region: " + region)
 
 	if ecsclient == nil || ec2client == nil {
-		cfg := (*aws.DefaultConfig).Merge(&aws.Config{Region: region, HTTPClient: getHTTPClient()})
+		cfg := &aws.Config{Region: aws.String(region), HTTPClient: getHTTPClient()}
 		if ecsclient == nil {
 			ecsclient = ecs.New(cfg)
 		}
@@ -234,14 +234,14 @@ func (c *ECSClient) Tasks(family, service *string) ([]Task, error) {
 			return nil, err
 		}
 		for _, containerInstance := range descrContainerInstances.ContainerInstances {
-			if containerInstance.EC2InstanceID != nil {
-				ec2InstanceIds = append(ec2InstanceIds, containerInstance.EC2InstanceID)
+			if containerInstance.Ec2InstanceId != nil {
+				ec2InstanceIds = append(ec2InstanceIds, containerInstance.Ec2InstanceId)
 			}
-			containerInstances[*containerInstance.ContainerInstanceARN] = containerInstance
+			containerInstances[*containerInstance.ContainerInstanceArn] = containerInstance
 		}
 	}
 
-	descrInstanceResponse, err := c.ec2.DescribeInstances(&ec2.DescribeInstancesInput{InstanceIDs: ec2InstanceIds})
+	descrInstanceResponse, err := c.ec2.DescribeInstances(&ec2.DescribeInstancesInput{InstanceIds: ec2InstanceIds})
 	if err != nil {
 		return nil, err
 	}
@@ -252,18 +252,18 @@ func (c *ECSClient) Tasks(family, service *string) ([]Task, error) {
 	}
 	for _, reservation := range descrInstanceResponse.Reservations {
 		for _, ec2Instance := range reservation.Instances {
-			if ec2Instance.InstanceID == nil {
+			if ec2Instance.InstanceId == nil {
 				continue
 			}
-			ec2Instances[*ec2Instance.InstanceID] = ec2Instance
+			ec2Instances[*ec2Instance.InstanceId] = ec2Instance
 		}
 	}
 
 	for _, task := range tasks {
-		containerInstance, ok := containerInstances[*task.ContainerInstanceARN]
+		containerInstance, ok := containerInstances[*task.ContainerInstanceArn]
 		var ec2Instance *ec2.Instance
-		if ok && containerInstance.EC2InstanceID != nil {
-			ec2Instance = ec2Instances[*containerInstance.EC2InstanceID]
+		if ok && containerInstance.Ec2InstanceId != nil {
+			ec2Instance = ec2Instances[*containerInstance.Ec2InstanceId]
 		}
 		output = append(output, Task{Task: task, EC2Instance: ec2Instance})
 	}
@@ -288,19 +288,19 @@ func (c *ECSClient) allTasks(family, service *string) ([]*ecs.Task, error) {
 
 	var descrErr error
 	err := c.ecs.ListTasksPages(input, func(taskArns *ecs.ListTasksOutput, _ bool) bool {
-		if len(taskArns.TaskARNs) == 0 {
+		if len(taskArns.TaskArns) == 0 {
 			return false
 		}
 		descrTasks, err := c.ecs.DescribeTasks(&ecs.DescribeTasksInput{
 			Cluster: &c.cluster,
-			Tasks:   taskArns.TaskARNs,
+			Tasks:   taskArns.TaskArns,
 		})
 		if err != nil {
 			descrErr = err
 			return false
 		}
 		if len(descrTasks.Failures) != 0 {
-			descrErr = fmt.Errorf("Failure describing task: %v - %v", *descrTasks.Failures[0].ARN, *descrTasks.Failures[0].Reason)
+			descrErr = fmt.Errorf("Failure describing task: %v - %v", *descrTasks.Failures[0].Arn, *descrTasks.Failures[0].Reason)
 			return false
 		}
 		tasks = append(tasks, descrTasks.Tasks...)
@@ -332,8 +332,8 @@ func (tasks taskArr) selectStatus(status string) taskArr {
 func (tasks taskArr) allContainerInstanceArns() []*string {
 	out := make(map[string]bool, 0)
 	for _, task := range tasks {
-		if task.ContainerInstanceARN != nil {
-			out[*task.ContainerInstanceARN] = true
+		if task.ContainerInstanceArn != nil {
+			out[*task.ContainerInstanceArn] = true
 		}
 	}
 	outArr := make([]*string, len(out))
