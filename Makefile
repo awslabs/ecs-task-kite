@@ -11,20 +11,16 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-GOPATH := $(GOPATH):$(shell pwd)/vendor
+GOPATH := $(shell pwd)/Godeps/_workspace:$(GOPATH)
+PATH := $(PATH):$(shell pwd)/Godeps/_workspace/bin
 
 all: static-go-binary ./misc/ca-bundle.crt
 	docker build -q -t amazon/ecs-task-kite:latest .
 	@echo "Built docker images amazon/ecs-task-kite:latest"
 
 static-go-binary:
-	@echo $$GOPATH
 	@mkdir -p bin
 	CGO_ENABLED=0 go build -a -installsuffix cgo -o ./bin/ecs-task-kite github.com/awslabs/ecs-task-kite/
-
-./misc/ca-bundle.crt:
-	@mkdir -p misc
-	curl -s https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt > ./misc/ca-bundle.crt
 
 generate:
 	go generate ./lib/...
@@ -33,9 +29,16 @@ test:
 	go test ./...
 
 clean:
-	rm -rf ./bin ./pkg ./vendor/pkg ./misc/ca-bundle.crt
+	rm -rf ./bin ./pkg ./Godeps/_workspace/pkg ./misc/ca-bundle.crt
 	-rmdir ./misc/
 
 lint:
 	go vet ./...
 	for pkg in $(shell go list -f "{{.Dir}}" ./... | grep -v "/mocks/"); do golint $$pkg; done
+
+./misc/ca-bundle.crt:
+	@mkdir -p misc
+	curl -s https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt > ./misc/ca-bundle.crt
+
+build-deps:
+	go get github.com/tools/godep

@@ -67,7 +67,7 @@
 		},
 		{
 			"ImportPath": "github.com/golang/mock/gomock",
-			"Rev": "15f8b22550555c0d3edf5afa97d74001bda2208b"
+			"Rev": "06883d979f10cc178f2716846215c8cf90f9e363"
 		},
 		{
 			"ImportPath": "github.com/vaughan0/go-ini",
