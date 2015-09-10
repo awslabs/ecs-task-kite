@@ -15,6 +15,7 @@ GOPATH := $(GOPATH):$(shell pwd)/vendor
 
 all: static-go-binary ./misc/ca-bundle.crt
 	docker build -q -t amazon/ecs-task-kite:latest .
+	@echo "Built docker images amazon/ecs-task-kite:latest"
 
 static-go-binary:
 	@echo $$GOPATH
