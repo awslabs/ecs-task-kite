@@ -21,7 +21,7 @@ import (
 
 // ContainerPorts returns all of the ports that a given container within the
 // tasks is listening on.
-func ContainerPorts(tasks []ecsclient.Task, containerName string, protocol string) []uint16 {
+func ContainerPorts(tasks []ecsclient.AugmentedTask, containerName string, protocol string) []uint16 {
 	// dedupe map to return the minimal array
 	seenPorts := make(map[uint16]bool)
 	output := make([]uint16, 0, len(tasks)/2)
@@ -30,7 +30,7 @@ func ContainerPorts(tasks []ecsclient.Task, containerName string, protocol strin
 		if container == nil {
 			continue
 		}
-		if *container.LastStatus != "RUNNING" {
+		if !container.Running() {
 			continue
 		}
 		ports := container.ContainerPorts(protocol)
@@ -46,14 +46,15 @@ func ContainerPorts(tasks []ecsclient.Task, containerName string, protocol strin
 
 // FilterIPPort returns the "ip:port" pair for the given containerName within
 // all tasks where the given container is known to be running.
-func FilterIPPort(tasks []ecsclient.Task, containerName string, containerPort uint16, publicIP bool) []string {
+func FilterIPPort(tasks []ecsclient.AugmentedTask, containerName string, containerPort uint16, publicIP bool) []string {
 	output := make([]string, 0, len(tasks)/2)
 	for _, task := range tasks {
 		container := task.Container(containerName)
 		if container == nil {
 			continue
 		}
-		if *container.LastStatus != "RUNNING" {
+		ecsContainer := container.ECSContainer()
+		if ecsContainer == nil || ecsContainer.LastStatus == nil || *ecsContainer.LastStatus != "RUNNING" {
 			continue
 		}
 		hostPort := container.ResolvePort(containerPort)

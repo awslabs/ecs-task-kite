@@ -17,7 +17,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/awslabs/ecs-task-kite/lib/ecsclient"
@@ -110,75 +109,13 @@ func TestListAllTasks(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, task := range tasks {
-		if !reflect.DeepEqual(task.Task, mockTasks[i]) {
+		if !reflect.DeepEqual(task.ECSTask(), mockTasks[i]) {
 			t.Fatal("Tasks did not match expected")
 		}
 
-		if !reflect.DeepEqual(task.EC2Instance, mockEC2Instances[i]) {
+		if !reflect.DeepEqual(task.EC2Instance(), mockEC2Instances[i]) {
 			t.Fatal("Task's ec2 instance did not match expected")
 		}
-	}
-}
-
-func networkBinding(port uint16, proto string) *ecs.NetworkBinding {
-	return &ecs.NetworkBinding{ContainerPort: aws.Int64(int64(port)), Protocol: aws.String(proto)}
-}
-
-func TestContainerPortsHelper(t *testing.T) {
-	pairs := []struct {
-		given    []*ecs.NetworkBinding
-		proto    string
-		expected []uint16
-	}{
-		{
-			given:    []*ecs.NetworkBinding{networkBinding(10, "tcp")},
-			proto:    "tcp",
-			expected: []uint16{10},
-		},
-		{
-			given:    []*ecs.NetworkBinding{networkBinding(10, "tcp"), networkBinding(15, "tcp")},
-			proto:    "tcp",
-			expected: []uint16{10, 15},
-		},
-		{
-			given:    []*ecs.NetworkBinding{networkBinding(10, "tcp"), networkBinding(20, "udp")},
-			proto:    "tcp",
-			expected: []uint16{10},
-		},
-		{
-			given:    []*ecs.NetworkBinding{},
-			proto:    "tcp",
-			expected: []uint16{},
-		},
-		{
-			given:    []*ecs.NetworkBinding{networkBinding(10, "udp")},
-			proto:    "udp",
-			expected: []uint16{10},
-		},
-	}
-
-	for i, pair := range pairs {
-		container := ecsclient.Container{
-			Container: &ecs.Container{
-				NetworkBindings: pair.given,
-			},
-		}
-		output := container.ContainerPorts(pair.proto)
-		if !reflect.DeepEqual(output, pair.expected) {
-			t.Errorf("Case #%v: Expected %v but got %v", i, pair.expected, output)
-		}
-	}
-}
-
-func TestContainerPortsHelperWithProtocol(t *testing.T) {
-	container := ecsclient.Container{Container: &ecs.Container{
-		NetworkBindings: []*ecs.NetworkBinding{
-			&ecs.NetworkBinding{ContainerPort: aws.Int64(9090)},
-		},
-	}}
-
-	if len(container.ContainerPorts("tcp")) != 1 || container.ContainerPorts("tcp")[0] != 9090 {
-		t.Fatalf("Expected container ports to be 9090; were %v", container.ContainerPorts("tcp"))
 	}
 }
 

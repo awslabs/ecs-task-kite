@@ -88,8 +88,8 @@ func proxyTasks(client ecsclient.ECSSimpleClient, family, service, name *string,
 	}
 }
 
-func collectTaskUpdates(client ecsclient.ECSSimpleClient, family, service *string) <-chan []ecsclient.Task {
-	taskUpdates := make(chan []ecsclient.Task, 0)
+func collectTaskUpdates(client ecsclient.ECSSimpleClient, family, service *string) <-chan []ecsclient.AugmentedTask {
+	taskUpdates := make(chan []ecsclient.AugmentedTask, 0)
 	go func() {
 		for {
 			log.Debug("Updating task list")
@@ -130,7 +130,7 @@ func unproxyRemovedPorts(containerPorts []uint16, proxies map[uint16]*proxy.Prox
 	}
 }
 
-func proxyNewPorts(tasks []ecsclient.Task, name *string, public *bool, containerPorts []uint16, proxies map[uint16]*proxy.Proxy) {
+func proxyNewPorts(tasks []ecsclient.AugmentedTask, name *string, public *bool, containerPorts []uint16, proxies map[uint16]*proxy.Proxy) {
 	for _, port := range containerPorts {
 		ipPortPairs := taskhelpers.FilterIPPort(tasks, *name, port, *public)
 		if len(ipPortPairs) == 0 {

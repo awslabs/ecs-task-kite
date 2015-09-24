@@ -36,23 +36,43 @@ const ecsChunkSize = 100
 
 const instanceIdentityDocumentResource = "http://169.254.169.254/2014-11-05/dynamic/instance-identity/document"
 
+// AugmentedTask is a task that has been augmented with additional convenience
+// methods.
+type AugmentedTask interface {
+	PublicIP() string
+	PrivateIP() string
+	Container(string) AugmentedContainer
+	ECSTask() *ecs.Task
+	EC2Instance() *ec2.Instance
+}
+
+// AugmentedContainer is a container that has been augmented with additioanl
+// convenience methods
+type AugmentedContainer interface {
+	ContainerPorts(string) []uint16
+	ResolvePort(uint16) uint16
+	Running() bool
+	ECSContainer() *ecs.Container
+}
+
 // Task wraps the ECS task and augments it with helper functions and a reference to its EC2 instance.
 // It should not be instantiated directly, but rather recieved from various functions in this package.
-type Task struct {
+// Task implements AugmentedTask
+type task struct {
 	*ecs.Task
-	EC2Instance *ec2.Instance
+	ec2Instance *ec2.Instance
 }
 
 // Container wraps the ECS container and augments it with helper functions.
 // It may be directly instantiated from any ecs.Container object
-type Container struct {
+type container struct {
 	*ecs.Container
 }
 
 // ContainerPorts returns the container side of all the port bindings specified
 // (both dynamic and static) in a container. It takes the protocol to filter by
 // as an argument. It should be 'tcp' or 'udp'.
-func (c *Container) ContainerPorts(protocol string) []uint16 {
+func (c *container) ContainerPorts(protocol string) []uint16 {
 	ports := make([]uint16, 0, len(c.NetworkBindings))
 	for _, binding := range c.NetworkBindings {
 		if binding == nil || binding.ContainerPort == nil {
@@ -73,7 +93,7 @@ func (c *Container) ContainerPorts(protocol string) []uint16 {
 }
 
 // ResolvePort returns the host port that a given container port is bound to, or 0 if it is not bound
-func (c *Container) ResolvePort(containerPort uint16) uint16 {
+func (c *container) ResolvePort(containerPort uint16) uint16 {
 	for _, binding := range c.NetworkBindings {
 		if binding.ContainerPort != nil && *binding.ContainerPort == int64(containerPort) && binding.HostPort != nil {
 			return uint16(*binding.HostPort)
@@ -82,33 +102,62 @@ func (c *Container) ResolvePort(containerPort uint16) uint16 {
 	return 0
 }
 
+// Running returns true if the ECS container's laststatus is 'running'
+func (c *container) Running() bool {
+	return c != nil && c.LastStatus != nil && *c.LastStatus == "RUNNING"
+}
+
+// ECSContainer returns the underlying ecs container SDK struct
+// If this container is nil, it returns nil
+func (c *container) ECSContainer() *ecs.Container {
+	if c == nil {
+		return nil
+	}
+	return c.Container
+}
+
+// EC2Instance returns the underlying ec2 instance SDK struct for this
+// task. If this task is nil, it returns nil
+func (t *task) EC2Instance() *ec2.Instance {
+	if t == nil {
+		return nil
+	}
+	return t.ec2Instance
+}
+
 // PublicIP returns the public ip address of the EC2 instance a task is running
 // on. If it cannot be found, it returns the empty string.
-func (t *Task) PublicIP() string {
-	if t.EC2Instance != nil && t.EC2Instance.PublicIpAddress != nil {
-		return *t.EC2Instance.PublicIpAddress
+func (t *task) PublicIP() string {
+	instance := t.EC2Instance()
+	if instance != nil && instance.PublicIpAddress != nil {
+		return *instance.PublicIpAddress
 	}
 	return ""
 }
 
 // PrivateIP returns the private ip address of the EC2 instance a task is
 // running on. If it cannot be found, it returns the empty string.
-func (t *Task) PrivateIP() string {
-	if t.EC2Instance != nil && t.EC2Instance.PrivateIpAddress != nil {
-		return *t.EC2Instance.PrivateIpAddress
+func (t *task) PrivateIP() string {
+	instance := t.EC2Instance()
+	if instance != nil && instance.PrivateIpAddress != nil {
+		return *instance.PrivateIpAddress
 	}
 	return ""
 }
 
 // Container returns the container by the given name within a task. If no such
 // container exists, it returns nil
-func (t *Task) Container(name string) *Container {
-	for _, container := range t.Containers {
-		if container.Name != nil && *container.Name == name {
-			return &Container{container}
+func (t *task) Container(name string) AugmentedContainer {
+	for _, ecsContainer := range t.Containers {
+		if ecsContainer.Name != nil && *ecsContainer.Name == name {
+			return &container{ecsContainer}
 		}
 	}
 	return nil
+}
+
+func (t *task) ECSTask() *ecs.Task {
+	return t.Task
 }
 
 // ECSSimpleClient is an abstraction over the ECS API that does the following:
@@ -117,7 +166,7 @@ func (t *Task) Container(name string) *Container {
 // 2) Describes the underlying EC2 instance and provides it via the
 //    EC2Instance field of the returned structs
 type ECSSimpleClient interface {
-	Tasks(family, serviceName *string) ([]Task, error)
+	Tasks(family, serviceName *string) ([]AugmentedTask, error)
 }
 
 // ECSClient implements ECSSimpleClient. It is exposed for cross-package testing
@@ -181,8 +230,8 @@ func New(cluster string, region string, ecsclient ecsiface.ECSAPI, ec2client ec2
 
 // Tasks returns an array of tasks filtered optionally by family or service.
 // The returned Task will be augmented with an EC2 instance element if an instance can be successfully associated.
-func (c *ECSClient) Tasks(family, service *string) ([]Task, error) {
-	output := []Task{}
+func (c *ECSClient) Tasks(family, service *string) ([]AugmentedTask, error) {
+	output := []AugmentedTask{}
 
 	tasks, err := c.allTasks(family, service)
 	if err != nil {
@@ -191,7 +240,7 @@ func (c *ECSClient) Tasks(family, service *string) ([]Task, error) {
 	tasks = taskArr(tasks).selectStatus("RUNNING")
 
 	if len(tasks) == 0 {
-		return []Task{}, nil
+		return []AugmentedTask{}, nil
 	}
 
 	containerInstanceArns := taskArr(tasks).allContainerInstanceArns()
@@ -250,7 +299,7 @@ func (c *ECSClient) Tasks(family, service *string) ([]Task, error) {
 		if ok && containerInstance.Ec2InstanceId != nil {
 			ec2Instance = ec2Instances[*containerInstance.Ec2InstanceId]
 		}
-		output = append(output, Task{Task: ecsTask, EC2Instance: ec2Instance})
+		output = append(output, &task{Task: ecsTask, ec2Instance: ec2Instance})
 	}
 
 	return output, nil
