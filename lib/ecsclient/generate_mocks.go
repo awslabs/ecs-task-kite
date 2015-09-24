@@ -15,3 +15,4 @@ package ecsclient
 
 //go:generate mockgen -destination=mocks/ec2/ec2_mocks.go github.com/aws/aws-sdk-go/service/ec2/ec2iface EC2API
 //go:generate mockgen -destination=mocks/ecs/ecs_mocks.go github.com/aws/aws-sdk-go/service/ecs/ecsiface ECSAPI
+//go:generate mockgen -destination=mocks/client_mocks.go github.com/awslabs/ecs-task-kite/lib/ecsclient AugmentedTask,AugmentedContainer
