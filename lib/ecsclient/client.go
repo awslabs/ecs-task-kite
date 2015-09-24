@@ -16,16 +16,15 @@
 package ecsclient
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/ecs"
@@ -136,17 +135,6 @@ type ECSClient struct {
 // be found, this function will panic.
 func New(cluster string, region string, ecsclient ecsiface.ECSAPI, ec2client ec2iface.EC2API) ECSSimpleClient {
 	// lazily init the http client in case it's not needed
-	var httpClient *http.Client
-	getHTTPClient := func() *http.Client {
-		// no need for threadsafety since this is only referenced in this function
-		if httpClient == nil {
-			httpClient = &http.Client{
-				Timeout:   3 * time.Second,
-				Transport: &userAgentedRoundTripper{},
-			}
-		}
-		return httpClient
-	}
 
 	if region == "" {
 		region = os.Getenv("AWS_REGION")
@@ -156,20 +144,12 @@ func New(cluster string, region string, ecsclient ecsiface.ECSAPI, ec2client ec2
 	}
 
 	if region == "" {
-		log.Debug("Trying to get region from instance identity doc")
-		iidResp, err := getHTTPClient().Get(instanceIdentityDocumentResource)
+		log.Debug("Trying to get region from EC2 Metadata")
+		ec2MetadataClient := ec2metadata.New(nil)
+		var err error
+		region, err = ec2MetadataClient.Region()
 		if err != nil {
-			log.Debug("Error getting iid resource ", err)
-		} else {
-			iidBody, _ := ioutil.ReadAll(iidResp.Body)
-			iid := struct {
-				Region string `json:"region"`
-			}{}
-			err = json.Unmarshal(iidBody, &iid)
-			if err != nil {
-				log.Debug("Couldn't unmarshal IID: ", err)
-			}
-			region = iid.Region
+			log.Errorf("Could not get region from EC2 metadata or environment", err)
 		}
 	}
 	if region == "" {
@@ -178,7 +158,12 @@ func New(cluster string, region string, ecsclient ecsiface.ECSAPI, ec2client ec2
 	log.Info("Region: " + region)
 
 	if ecsclient == nil || ec2client == nil {
-		cfg := &aws.Config{Region: aws.String(region), HTTPClient: getHTTPClient()}
+		// Create a custom client to add our useragent
+		customClient := &http.Client{
+			Timeout:   3 * time.Second,
+			Transport: &userAgentedRoundTripper{},
+		}
+		cfg := &aws.Config{Region: aws.String(region), HTTPClient: customClient}
 		if ecsclient == nil {
 			ecsclient = ecs.New(cfg)
 		}
@@ -259,13 +244,13 @@ func (c *ECSClient) Tasks(family, service *string) ([]Task, error) {
 		}
 	}
 
-	for _, task := range tasks {
-		containerInstance, ok := containerInstances[*task.ContainerInstanceArn]
+	for _, ecsTask := range tasks {
+		containerInstance, ok := containerInstances[*ecsTask.ContainerInstanceArn]
 		var ec2Instance *ec2.Instance
 		if ok && containerInstance.Ec2InstanceId != nil {
 			ec2Instance = ec2Instances[*containerInstance.Ec2InstanceId]
 		}
-		output = append(output, Task{Task: task, EC2Instance: ec2Instance})
+		output = append(output, Task{Task: ecsTask, EC2Instance: ec2Instance})
 	}
 
 	return output, nil

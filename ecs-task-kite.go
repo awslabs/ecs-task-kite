@@ -64,9 +64,8 @@ func proxyTasks(client ecsclient.ECSSimpleClient, family, service, name *string,
 	taskUpdates := collectTaskUpdates(client, family, service)
 	// map of port -> proxy
 	proxies := make(map[uint16]*proxy.Proxy)
-	for {
+	for tasks := range taskUpdates {
 		// Get changes to what tasks are running in the given family/service
-		tasks := <-taskUpdates
 		if len(tasks) == 0 {
 			log.Debug("No tasks in update; ignoring")
 			continue
@@ -75,9 +74,9 @@ func proxyTasks(client ecsclient.ECSSimpleClient, family, service, name *string,
 		containerPorts := taskhelpers.ContainerPorts(tasks, *name, "tcp")
 		if len(containerPorts) == 0 {
 			log.Warn("No container ports; not proxying anything")
-			// Continue anyways to ensure that we remove any stale listeners
+			// Continue anyway to ensure that we remove any stale listeners
 		}
-		// If there's any ports that are no longer needed (e.g. someone updates a
+		// If there are any ports that are no longer needed (e.g. someone updates a
 		// service to be of a task that no longer listens on port 80 and 8080, only
 		// 80, we stop listening on 8080 here and close any existing connections)
 		unproxyRemovedPorts(containerPorts, proxies)
