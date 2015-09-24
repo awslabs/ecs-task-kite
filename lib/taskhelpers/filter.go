@@ -53,8 +53,7 @@ func FilterIPPort(tasks []ecsclient.AugmentedTask, containerName string, contain
 		if container == nil {
 			continue
 		}
-		ecsContainer := container.ECSContainer()
-		if ecsContainer == nil || ecsContainer.LastStatus == nil || *ecsContainer.LastStatus != "RUNNING" {
+		if !container.Running() {
 			continue
 		}
 		hostPort := container.ResolvePort(containerPort)
