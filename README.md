@@ -4,7 +4,7 @@
 
 You and your space-buddy are stowing away on a starship in a pair of corrugated
 tin containers. You know your best gal, Monday, is stowed away aboard another
-spaceship near the station. "Hey buddy, did you bring your Kite?" you knock on
+spaceship near the station. "Hey buddy, did you bring your Kite?" You knock on
 the container wall to get his attention, "I really need to flash a sig at my
 girl". "Yeah, my Kite's already out on the Sail, just give me her deets".
 Moments later, without Monday having a clue where you are, your buddy has used
@@ -31,8 +31,8 @@ the above criterion (randomly currently).
 It is also expected that it be used via either container links or sharing the
 network namespace with the consumer. In the case of linking, it does not
 `EXPOSE` the appropriate ports (due to them being dynamically discovered at
-runtime), and thus will not work with the `--icc` option disabled. This option
-is enabled by default however.
+runtime), and thus will not work with the `--icc` option set to false. By
+default, `--icc` is set to true.
 
 ## Usage
 
@@ -50,6 +50,29 @@ Optional:
 
 The Task Kite will proxy to a task of the specified family or within the
 specified service at random when a connection is made to it on a valid port.
+
+### IAM Policy
+
+The Task Kite makes a number of API calls which should be covered by a policy
+similar to the following:
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecs:DescribeContainerInstances",
+                "ec2:DescribeInstances",
+                "ecs:ListTasks",
+                "ecs:DescribeTasks"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
 
 ## What is it not?
 
