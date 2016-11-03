@@ -34,7 +34,7 @@ clean:
 
 lint:
 	go vet ./...
-	for pkg in $(shell go list -f "{{.Dir}}" ./... | grep -v "/mocks/"); do golint $$pkg; done
+	for pkg in $(shell go list -f "{{.Dir}}" ./... | grep -v "/mocks"); do golint $$pkg; done
 
 ./misc/ca-bundle.crt:
 	@mkdir -p misc

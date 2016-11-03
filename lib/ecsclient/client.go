@@ -198,7 +198,7 @@ func New(cluster string, region string, ecsclient ecsiface.ECSAPI, ec2client ec2
 		var err error
 		region, err = ec2MetadataClient.Region()
 		if err != nil {
-			log.Errorf("Could not get region from EC2 metadata or environment", err)
+			log.Errorf("Could not get region from EC2 metadata or environment: %v", err)
 		}
 	}
 	if region == "" {
