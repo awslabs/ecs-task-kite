@@ -1,0 +1,11 @@
+language: go
+go:
+  - 1.7
+before_install: ./scripts/hack/symlink-gopath-travisci
+script:
+  - cd $HOME/gopath/src/github.com/awslabs/ecs-task-kite
+  - make build-deps
+  - make static-go-binary
+  - make test
+  - make lint
+

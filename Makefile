@@ -41,4 +41,4 @@ lint:
 	curl -s https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt > ./misc/ca-bundle.crt
 
 build-deps:
-	go get github.com/tools/godep
+	go get github.com/golang/lint/golint
