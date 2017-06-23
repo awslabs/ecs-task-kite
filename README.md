@@ -18,9 +18,9 @@ so you can hardly tell the difference betwixt the lot of them.
 ## No really, what is it?
 
 ECS Task Kite is a proof of concept [ambassador
-container](https://docs.docker.com/articles/ambassador_pattern_linking/) using
-the ECS APIs.  It's meant to be tiny in terms of memory and disk footprint and
-simple in terms of operation.
+container](https://docs.docker.com/engine/admin/ambassador_pattern_linking/)
+using the ECS APIs.  It's meant to be tiny in terms of memory and disk footprint
+and simple in terms of operation.
 
 Unlike the ambassador pattern documented above, it is expected that this
 ambassador only be run on the consumer. It is also expected that the server is
